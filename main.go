@@ -13,5 +13,5 @@ func main() {
 		pokeapiClient: pokeapi.NewClient(),
 	}
 
-	startRepl(&cfg)  // Changed this line
+	startRepl(&cfg)
 }
