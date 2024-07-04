@@ -59,3 +59,52 @@ func (c *Client) ListLocationAreas(pageURL *string) (LocationAreaRes, error) {
 
 	return locationAreaRes, nil
 }
+
+func (c *Client) GetLocationArea(name string) (LocationAreaDetail, error) {
+	endpoint := fmt.Sprintf("/location-area/%s", name)
+	fullURL := baseURL + endpoint
+
+	// Check if the data is in the cache
+	if cachedData, found := c.cache.Get(fullURL); found {
+		fmt.Println("Cache hit!")
+		var locationArea LocationAreaDetail
+		err := json.Unmarshal(cachedData, &locationArea)
+		if err != nil {
+			return LocationAreaDetail{}, err
+		}
+		return locationArea, nil
+	}
+
+	fmt.Println("Cache miss!")
+
+	req, err := http.NewRequest("GET", fullURL, nil)
+	if err != nil {
+		return LocationAreaDetail{}, err
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return LocationAreaDetail{}, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode > 399 {
+		return LocationAreaDetail{}, fmt.Errorf("bad status code: %v", res.StatusCode)
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return LocationAreaDetail{}, err
+	}
+
+	// Add the data to the cache
+	c.cache.Add(fullURL, data)
+
+	var locationArea LocationAreaDetail
+	err = json.Unmarshal(data, &locationArea)
+	if err != nil {
+		return LocationAreaDetail{}, err
+	}
+
+	return locationArea, nil
+}
